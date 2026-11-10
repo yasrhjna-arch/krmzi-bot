@@ -1,10 +1,12 @@
+
 import asyncio
 import logging
 import re
 import unicodedata
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filtersالجديد هنا
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+
 TOKEN = "9192441518:AAFsuOfIbwti_qE4BURAGQTlSxlhwuEZUTk"
 
 CHANNEL_USERNAME = "@krmzi_JD"
@@ -12,145 +14,102 @@ CHANNEL_LINK = "https://t.me/krmzi_JD"
 REQUEST_GROUP_LINK = "https://t.me/iekekdkj"
 
 channels_dict = {
-    "انت من احب": "https://t.me/+yAwrqyu9Z9MxYjNk",
-    "حب محتمل": "https://t.me/+s4bNfzIMJmZjZmY0",
-    "تحت الارض": "https://t.me/+zCD3mSNC8Y9lMzY0",
-    "في السابعة عشر": "https://t.me/+VvwDlzEbtT9iNzJk",
-    "المعلمة اومور": "https://t.me/+405drUn8v7oxY2E0",
-    "الاعراف": "https://t.me/+Td3EZl4VfdNlMDBk",
+    "انت من احب": "https://t.me/+yAwrqyu9Z9MxyJnk",
+    "حب محتمل": "https://t.me/+s4bNfZiJmZjZmY0",
+    "تحت الارض": "https://t.me/+zCD3mSNC8y91MzY0",
+    "في السابعة عشر": "https://t.me/+VwDlZbETt9INzJk",
+    "المعلمة أومور": "https://t.me/+405drUn8v7oxy2E0",
+    "الاعراف": "https://t.me/+Td3EZ14VfdN1MDBk",
     "ورود وذنوب": "https://t.me/+HXLagJmSxTMyNGY0",
     "الخليفة": "https://t.me/kskskkuu",
-    "اعلانات": "https://t.me/a1sso",
-    "حب اسود": "https://t.me/+o1KH2oxwMsoyODA0",
-    "احلى نصيب": "https://t.me/+H-eOV4IvizozOTE0",
-    "اسطنبول راسا على عقب": "https://t.me/+QW1X6GCHZ2U5ODU0",
-    "الزواج الجميل": "https://t.me/GZALDIZI",
-    "قرمزي": "https://t.me/krmzi_JD",
-    "حياة الاخرين": "https://t.me/HeDizi",
-    "نصف الام": "https://t.me/AcDizi",
-    "حبك نار": "https://t.me/SbDizi",
-    "القهوة المالحة": "https://t.me/TqDizi",
-    "حبي هو البحر الاسود": "https://t.me/ApDizi",
-    "قصر المرجان": "https://t.me/MgDizi",
-    "حيث تشرق الشمس": "https://t.me/GdDizi",
-    "هذا البحر سوف يفيض": "https://t.me/TnDizi",
-    "المدينة البعيدة": "https://t.me/+U8taycNlsNplNzQ0",
+    "الزواج الجميل": "https://t.me/kskskkuu",
+    "طالع نازل": "https://t.me/kskskkuu",
+    "القصة الكاملة": "https://t.me/kskskkuu",
+    "القهوة المالحة": "https://t.me/kskskkuu",
+    "حبيك نار": "https://t.me/kskskkuu",
+    "نصف الام": "https://t.me/kskskkuu",
+    "حياة الاخرين": "https://t.me/kskskkuu",
+    "اسطنبول": "https://t.me/kskskkuu",
+    "المدينة البعيدة": "https://t.me/kskskkuu",
+    "قصر المرجان": "https://t.me/kskskkuu",
+    "حيث تشرق الشمس": "https://t.me/kskskkuu",
+    "هذا البحر سوف يفيض": "https://t.me/kskskkuu",
+    "اشرح ايها البحر الاسود": "https://t.me/kskskkuu",
 }
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
 
-
-def normalize(value):
-    value = unicodedata.normalize("NFKD", value.strip().lower())
-    value = "".join(ch for ch in value if not unicodedata.combining(ch))
-    value = value.translate(str.maketrans({
-        "أ": "ا", "إ": "ا", "آ": "ا",
-        "ى": "ي", "ة": "ه", "ؤ": "و", "ئ": "ي"
-    }))
-    return re.sub(r"\s+", " ", value)
-
-
-async def check_subscription(user_id, context):
-    try:
-        member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        return member.status in ("member", "administrator", "creator")
-    except Exception:
-        logging.exception("تعذر التحقق من الاشتراك")
-        return False
-
-
-def subscription_keyboard():
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("اشترك في قناة قرمزي 📢", url=CHANNEL_LINK)],
-        [InlineKeyboardButton("قروب الطلبات 💬", url=REQUEST_GROUP_LINK)],
-    ])
-
-
-async def delete_after_one_minute(message):
-    await asyncio.sleep(60)
-    try:
-        await message.delete()
-    except Exception:
-        pass
-
+def normalize_text(text):
+    if not text:
+        return ""
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join([c for c in text if not unicodedata.combining(c)])
+    text = text.lower()
+    text = re.sub(r"[أإآا]", "ا", text)
+    text = re.sub(r"ة", "ه", text)
+    text = re.sub(r"ى", "ي", text)
+    text = re.sub(r"[^\w\s]", "", text)
+    return " ".join(text.split())
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.effective_chat or update.effective_chat.type != "private":
-        return
-
-    user = update.effective_user
-
-    if not await check_subscription(user.id, context):
-        sent = await update.message.reply_text(
-            f"أهلاً بك {user.first_name} 🌸\n"
-            "لاستخدام البوت، اشترك أولاً في قناة قرمزي:",
-            reply_markup=subscription_keyboard()
-        )
-        asyncio.create_task(delete_after_one_minute(sent))
-        return
-
-    sent = await update.message.reply_text(
-        f"أهلاً بك {user.first_name} في بوت قرمزي للبحث عن المسلسلات 🎬\n"
-        "أرسل اسم المسلسل."
+    user_name = update.effective_user.first_name or "عزيزي"
+    keyboard = [
+        [InlineKeyboardButton("📢 اضغط للانضمام لقناة المسلسل", url=CHANNEL_LINK)]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    welcome_text = (
+        f"أهلاً بك يا {user_name} ✨\n\n"
+        f"مسلسل تحت الارض متوفر لدينا، تفضل بالدخول إلى القناة المخصصة له من الزر أدناه 👇"
     )
-    asyncio.create_task(delete_after_one_minute(sent))
-
+    await update.message.reply_text(text=welcome_text, reply_markup=reply_markup)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.effective_chat or update.effective_chat.type != "private":
-        return
-
     if not update.message or not update.message.text:
         return
-
-    user = update.effective_user
-
-    if not await check_subscription(user.id, context):
-        sent = await update.message.reply_text(
-            f"عذراً {user.first_name} ❌\n"
-            "يجب الاشتراك في قناة قرمزي للبحث:",
-            reply_markup=subscription_keyboard()
-        )
-        asyncio.create_task(delete_after_one_minute(sent))
-        return
-
-    query = normalize(update.message.text.replace("مسلسل", "").strip())
-    found_link = None
-
-    for title, link in channels_dict.items():
-        if normalize(title) == query or normalize(title) in query:
-            found_link = link
+    
+    raw_text = update.message.text
+    user_text = normalize_text(raw_text)
+    
+    matched_channel = None
+    for key, link in channels_dict.items():
+        norm_key = normalize_text(key)
+        if norm_key in user_text:
+            matched_channel = link
             break
-
-    if found_link:
-        sent = await update.message.reply_text(
-            "مسلسلك متوفر، اضغط الزر للانضمام:",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("رابط المسلسل 🎬", url=found_link)
-            ]])
+            
+    if matched_channel:
+        keyboard = [
+            [InlineKeyboardButton("🔗 اضغط هنا للانضمام للقناة", url=matched_channel)]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(
+            text="تفضل بطلبك، يمكنك الانضمام للقناة عبر الزر أدناه 👇",
+            reply_markup=reply_markup
         )
     else:
-        sent = await update.message.reply_text(
-            "مسلسلك غير متوفر حالياً. انضم إلى قروب الطلبات:",
-            reply_markup=InlineKeyboardMarkup([[
-                InlineKeyboardButton("قروب الطلبات 💬", url=REQUEST_GROUP_LINK)
-            ]])
+        keyboard = [
+            [InlineKeyboardButton("📌 طلب مسلسل جديد", url=REQUEST_GROUP_LINK)]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text(
+            text="عذراً، لم أتمكن من العثور على المسلسل المطلوب. يمكنك طلبه عبر الرابط أدناه 👇",
+            reply_markup=reply_markup
         )
 
-    asyncio.create_task(delete_after_one_minute(sent))
-
-
 def main():
-    if TOKEN == "PUT_NEW_TOKEN_HERE":
-        raise SystemExit("ضعي توكن BotFather الجديد مكان PUT_NEW_TOKEN_HERE.")
+    application = ApplicationBuilder().token(TOKEN).build()
+    
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(telegram_message_handler := telegram_msg_handler_factory())
+    
+    application.run_polling()
 
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+def telegram_msg_handler_factory():
+    from telegram.ext import MessageHandler, filters
+    return MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message)
 
-    print("البوت يعمل الآن...")
-    app.run_polling()
-
-
-if __name__ == "__main__":
+if name == "main":
     main()
