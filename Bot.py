@@ -1,17 +1,29 @@
 import asyncio
 import logging
-import re
-import unicodedata
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import (
+    ApplicationBuilder,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    filters,
+)
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+# إعداد السجلات
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
-TOKEN = "9192441518:AAFsuOfIbwti_qE4BURAGQTlSxlhwuEZUTk"
-
+# اليوزر أو المعرف الخاص بقناة قرمزي الإجبارية (بدون رابط، فقط اليوزر مع @)
+# بما أن رابط قناتك هو https://t.me/krmzi_JD إذن يوزرها هو @krmzi_JD
 CHANNEL_USERNAME = "@krmzi_JD"
 CHANNEL_LINK = "https://t.me/krmzi_JD"
+
+# رابط قروب الطلبات الجديد
 REQUEST_GROUP_LINK = "https://t.me/iekekdkj"
 
+# قاموس المسلسلات والروابط
 channels_dict = {
     "انت من احب": "https://t.me/+yAwrqyu9Z9MxYjNk",
     "حب محتمل": "https://t.me/+s4bNfzIMJmZjZmY0",
@@ -24,7 +36,7 @@ channels_dict = {
     "اعلانات": "https://t.me/a1sso",
     "حب اسود": "https://t.me/+o1KH2oxwMsoyODA0",
     "احلى نصيب": "https://t.me/+H-eOV4IvizozOTE0",
-    "إسطنبول راسا على عقب": "https://t.me/+QW1X6GCHZ2U5ODU0",
+    "إسطنبول رأساً على عقب": "https://t.me/+QW1X6GCHZ2U5ODU0",
     "الزواج الجميل": "https://t.me/GZALDIZI",
     "قرمزي": "https://t.me/krmzi_JD",
     "حياة الاخرين": "https://t.me/HeDizi",
@@ -35,115 +47,140 @@ channels_dict = {
     "قصر المرجان": "https://t.me/MgDizi",
     "حيث تشرق الشمس": "https://t.me/GdDizi",
     "هذا البحر سوف يفيض": "https://t.me/TnDizi",
+    "المدينة البعيدة": "https://t.me/+U8taycNlsNplNzQ0",
 }
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
 
-def normalize_text(text):
-    if not text:
-        return ""
-    text = unicodedata.normalize("NFKD", text)
-    text = "".join([c for c in text if not unicodedata.combining(c)])
-    text = text.lower()
-    text = re.sub(r"[أإآا]", "ا", text)
-    text = re.sub(r"ة", "ه", text)
-    text = re.sub(r"ى", "ي", text)
-    text = re.sub(r"[^\w\s]", "", text)
-    return " ".join(text.split())
+# دالة للتحقق إذا كان العضو مشترك في القناة أو لا
+async def check_subscription(user_id, context):
+  try:
+    member = await context.bot.get_chat_member(
+        chat_id=CHANNEL_USERNAME, user_id=user_id
+    )
+    # حالات المشترك الفعلي في التليجرام
+    if member.status in ["member", "administrator", "creator"]:
+      return True
+  except Exception:
+    pass
+  return False
 
-async def check_subscription(user_id, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        member = await context.bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
-        if member.status in ["member", "administrator", "creator"]:
-            return True
-    except Exception:
-        pass
-    return False
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    user_name = user.first_name or "عزيزي"
-    
-    is_subscribed = await check_subscription(user.id, context)
-    if not is_subscribed:
-        keyboard = [
-            [InlineKeyboardButton("📢 اشترك في قناة قرمزي أولاً", url=CHANNEL_LINK)],
-            [InlineKeyboardButton("✅ تحقق من الاشتراك", callback_data="check_sub")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
-            text=f"عذراً يا {user_name} 🚫\nيجب عليك الاشتراك في قناة البوت الرسمية أولاً لتمكين استخدام البوت ⬇️",
-            reply_markup=reply_markup
-        )
-        return
+  user_id = update.effective_user.id
+  user_name = update.effective_user.first_name
 
+  # فحص الاشتراك الإجباري أول ما يفتح البوت
+  is_subscribed = await check_subscription(user_id, context)
+
+  if not is_subscribed:
+    reply_text = (
+        f"أهلاً بك {user_name} 🌸\nعذراً, لا يمكنك استخدام البوت إلا بعد الانضمام"
+        f" إلى قناة قرمزي الأساسية ⬇️\n\n(الرابط فقط لمدة دقيقة واحدة)"
+    )
     keyboard = [
-        [InlineKeyboardButton("📢 قناة قرمزي", url=CHANNEL_LINK)]
+        [InlineKeyboardButton("اشترك في قناة قرمزي 📢", url=CHANNEL_LINK)],
+        [InlineKeyboardButton("قروب الطلبات 💬", url=REQUEST_GROUP_LINK)],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    welcome_text = (
-        f"أهلاً بك يا {user_name} ✨\n\n"
-        f"أهلاً بك في بوت قرمزي للبحث عن المسلسلات. أرسل اسم المسلسل الذي تبحث عنه وسأقوم بتوفيره لك ⬇️"
+    sent_message = await update.message.reply_text(
+        reply_text, reply_markup=reply_markup
     )
-    await update.message.reply_text(text=welcome_text, reply_markup=reply_markup)
+  else:
+    await update.message.reply_text(
+        f"أهلاً بك {user_name} في بوت قرمزي للبحث عن المسلسلات 🎬\nأرسل اسم"
+        " المسلسل وابحث عنه الآن!"
+    )
+
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    is_subscribed = await check_subscription(user.id, context)
-    
-    if not is_subscribed:
-        keyboard = [
-            [InlineKeyboardButton("📢 اشترك في قناة قرمزي أولاً", url=CHANNEL_LINK)]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
-            text="عذراً، لا يمكنك استخدام البوت حتى تشترك في القناة الإجبارية أولاً ⬇️",
-            reply_markup=reply_markup
-        )
-        return
+  user_id = update.effective_user.id
+  user_name = update.effective_user.first_name
+  text = update.message.text.strip().lower()
 
-if not update.message or not update.message.text:
-        return
-    
-    raw_text = update.message.text
-    user_text = normalize_text(raw_text)
-    
-    matched_channel = None
-    for key, link in channels_dict.items():
-        norm_key = normalize_text(key)
-        if norm_key in user_text:
-            matched_channel = link
-            break
-            
-    if matched_channel:
-        keyboard = [
-            [InlineKeyboardButton("🔗 اضغط هنا للانضمام للقناة", url=matched_channel)]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
-            text="تفضل بطلبك، يمكنك الانضمام للقناة عبر الزر أدناه ⬇️",
-            reply_markup=reply_markup
-        )
-    else:
-        keyboard = [
-            [InlineKeyboardButton("📌 طلب مسلسل جديد", url=REQUEST_GROUP_LINK)]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(
-            text="عذراً، المسلسل غير متوفر لدينا حالياً. يمكنك طلبه عبر الانضمام لقروب الطلبات أدناه ⬇️",
-            reply_markup=reply_markup
-        )
+  # فحص الاشتراك الإجباري مع كل رسالة يرسلها العضو
+  is_subscribed = await check_subscription(user_id, context)
+
+  if not is_subscribed:
+    reply_text = (
+        f"عذراً {user_name} ❌\nيجب عليك الاشتراك في قناة قرمزي لتتمكن من استخدام"
+        f" البوت والبحث عن المسلسلات ⬇️\n\n(الرابط فقط لمدة دقيقة واحدة)"
+    )
+    keyboard = [
+        [InlineKeyboardButton("اشترك في قناة قرمزي 📢", url=CHANNEL_LINK)],
+        [InlineKeyboardButton("قروب الطلبات 💬", url=REQUEST_GROUP_LINK)],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    sent_message = await update.message.reply_text(
+        reply_text, reply_markup=reply_markup
+    )
+# حذف رسالة التنبيه بعد دقيقة
+    async def delete_later():
+      await asyncio.sleep(60)
+      try:
+        await sent_message.delete()
+      except Exception:
+        pass
+
+    asyncio.create_task(delete_later())
+    return
+
+  # تنظيف النص لو كتب العضو كلمة "مسلسل"
+  text = text.replace("مسلسل", "").strip()
+
+  # البحث عن المسلسل
+  found_link = None
+  for key, link in channels_dict.items():
+    if key in text:
+      found_link = link
+      break
+
+  if found_link:
+    reply_text = (
+        f"أهلاً {user_name}\nمسلسلك متوفر، انضم للقناة ⬇️\n\n(الرابط فقط لمدة"
+        " دقيقة واحدة)"
+    )
+    keyboard = [[InlineKeyboardButton("رابط القناة (للإنضمام)", url=found_link)]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    sent_message = await update.message.reply_text(
+        reply_text, reply_markup=reply_markup
+    )
+  else:
+    reply_text = (
+        f"مسلسلك للأسف غير متوفر، انضم لقروب الطلبات ويرسل لك المشرف وقت فتحه"
+        f" ⬇️\n\n(الرابط فقط لمدة دقيقة واحدة)"
+    )
+    keyboard = [
+        [InlineKeyboardButton("قروب الطلبات (للإنضمام)", url=REQUEST_GROUP_LINK)]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    sent_message = await update.message.reply_text(
+        reply_text, reply_markup=reply_markup
+    )
+
+  # حذف الرسالة بعد دقيقة واحدة
+  async def delete_later():
+    await asyncio.sleep(60)
+    try:
+      await sent_message.delete()
+    except Exception:
+      pass
+
+  asyncio.create_task(delete_later())
+
 
 def main():
-    application = ApplicationBuilder().token(TOKEN).build()
-    
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-    
-    application.run_polling()
+  TOKEN = "9192441518:AAFsuOfIbwti_qE4BURAGQTlSxlhwuEZUTk"
+
+  application = ApplicationBuilder().token(TOKEN).build()
+
+  application.add_handler(CommandHandler("start", start))
+  application.add_handler(
+      MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message)
+  )
+
+  print("Bot is running with forced subscription...")
+  application.run_polling()
+
 
 if name == "main":
-    main()
+  main()
