@@ -4,9 +4,7 @@ import re
 import unicodedata
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
-
-# ضعي توكن BotFather الجديد هنا
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filtersالجديد هنا
 TOKEN = "9192441518:AAFsuOfIbwti_qE4BURAGQTlSxlhwuEZUTk"
 
 CHANNEL_USERNAME = "@krmzi_JD"
